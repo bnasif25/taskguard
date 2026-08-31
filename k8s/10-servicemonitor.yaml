@@ -1,0 +1,26 @@
+---
+# ServiceMonitor — tells Prometheus to scrape this Service.
+# Requires the Prometheus Operator (kube-prometheus-stack) to be installed.
+# Prometheus discovers this resource via label selectors and begins scraping /metrics.
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: taskguard
+  namespace: taskguard
+  labels:
+    app.kubernetes.io/name: taskguard
+    app.kubernetes.io/component: monitoring
+    # This label must match Prometheus's serviceMonitorSelector
+    release: prometheus
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: taskguard
+      app.kubernetes.io/component: api
+  endpoints:
+    - port: http
+      path: /metrics
+      interval: 15s
+      scrapeTimeout: 10s
+      # Honor labels from the scraped metrics (don't override with pod labels)
+      honorLabels: true

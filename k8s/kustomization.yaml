@@ -1,0 +1,31 @@
+---
+# Kustomize overlay — deploys the entire stack with one command.
+# Usage: kubectl apply -k ./k8s
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: taskguard
+
+resources:
+  - 01-namespace.yaml
+  - 02-configmap.yaml
+  - 03-secret.yaml
+  - 04-deployment.yaml
+  - 05-service.yaml
+  - 05a-serviceaccount.yaml
+  - 06-networkpolicy.yaml
+  - 07-hpa.yaml
+  - 08-pdb.yaml
+  - 09-ingress.yaml
+  - 10-servicemonitor.yaml
+  - 11-prometheus-rule.yaml
+
+commonLabels:
+  app.kubernetes.io/name: taskguard
+  app.kubernetes.io/managed-by: kustomize
+
+# Optional: patch the Deployment image tag dynamically.
+# In CI/CD, you would set this to the Git commit SHA.
+images:
+  - name: taskguard
+    newTag: latest

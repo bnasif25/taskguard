@@ -1,0 +1,20 @@
+---
+# PodDisruptionBudget — ensures voluntary disruptions never drop availability below 1 pod.
+# Voluntary disruptions include: node drain, cluster upgrade, pod eviction for resource pressure.
+# Without a PDB, a node drain could delete both pods simultaneously, causing downtime.
+# minAvailable: 1 means "at least one pod must stay running during any disruption."
+# This works with the Deployment's maxUnavailable: 0 for zero-downtime updates.
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: taskguard
+  namespace: taskguard
+  labels:
+    app.kubernetes.io/name: taskguard
+    app.kubernetes.io/component: availability
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: taskguard
+      app.kubernetes.io/component: api

@@ -1,0 +1,23 @@
+---
+# ClusterIP Service — internal load balancer for the Deployment.
+# NEVER expose a Deployment directly. Always go through a Service.
+# The Service maintains an endpoint list of ready pods.
+# When a pod fails readiness, it is removed from this list automatically.
+apiVersion: v1
+kind: Service
+metadata:
+  name: taskguard
+  namespace: taskguard
+  labels:
+    app.kubernetes.io/name: taskguard
+    app.kubernetes.io/component: api
+spec:
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/name: taskguard
+    app.kubernetes.io/component: api
+  ports:
+    - name: http
+      port: 8080
+      targetPort: http
+      protocol: TCP

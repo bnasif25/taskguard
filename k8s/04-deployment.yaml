@@ -1,0 +1,150 @@
+---
+# TaskGuard Deployment — the core workload resource.
+# A Deployment manages ReplicaSets, which manage Pods.
+# This manifest demonstrates security hardening, probe configuration,
+# resource limits, and graceful shutdown.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: taskguard
+  namespace: taskguard
+  labels:
+    app.kubernetes.io/name: taskguard
+    app.kubernetes.io/component: api
+    app.kubernetes.io/version: "1.0.0"
+spec:
+  # Start with 2 replicas for high availability.
+  # HPA will scale this up/down based on CPU/memory.
+  replicas: 2
+
+  # RollingUpdate with maxUnavailable: 0 means:
+  # "Never drop below the desired replica count during an update."
+  # This ensures zero-downtime deployments.
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1       # Add at most 1 new pod at a time
+      maxUnavailable: 0 # Never remove an old pod before the new one is ready
+
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: taskguard
+      app.kubernetes.io/component: api
+
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: taskguard
+        app.kubernetes.io/component: api
+      annotations:
+        # Force rolling restart when ConfigMap changes.
+        # Without this, pods don't restart when config updates.
+        checksum/config: "${CONFIG_CHECKSUM}"
+    spec:
+      # --- Security Context (Pod level) ---
+      # runAsNonRoot: container cannot run as uid 0 (root).
+      # seccompProfile RuntimeDefault: use the container runtime's default seccomp filter.
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+        seccompProfile:
+          type: RuntimeDefault
+
+      # --- Service Account ---
+      # A dedicated ServiceAccount with minimal RBAC permissions.
+      # Using 'default' is acceptable for this demo, but production would use a custom SA.
+      serviceAccountName: taskguard
+
+      containers:
+        - name: taskguard
+          image: taskguard:latest
+          imagePullPolicy: IfNotPresent
+
+          ports:
+            - name: http
+              containerPort: 8080
+              protocol: TCP
+
+          envFrom:
+            - configMapRef:
+                name: taskguard-config
+            - secretRef:
+                name: taskguard-secrets
+
+          # --- Resource Limits ---
+          # requests: what the scheduler uses to place the pod on a node.
+          # limits: what the kernel enforces via cgroups.
+          # If the container exceeds memory limits, it is OOMKilled.
+          # If it exceeds CPU limits, it is throttled (not killed).
+          resources:
+            requests:
+              memory: "128Mi"
+              cpu: "100m"
+            limits:
+              memory: "256Mi"
+              cpu: "200m"
+
+          # --- Security Context (Container level) ---
+          # allowPrivilegeEscalation: false = process cannot gain more privileges.
+          # readOnlyRootFilesystem: false = we need to write to /tmp (Go runtime uses it).
+          #   For production, set this to true and mount an emptyDir for /tmp.
+          # capabilities drop ALL: remove all Linux capabilities.
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: false
+            capabilities:
+              drop:
+                - ALL
+
+          # --- Startup Probe ---
+          # Purpose: Give the app time to initialize before liveness/readiness begin.
+          # Without this, a slow-starting app would be killed by liveness before it's ready.
+          # We give 12 attempts × 5s = 60s max startup time.
+          startupProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            initialDelaySeconds: 2
+            periodSeconds: 5
+            failureThreshold: 12
+
+          # --- Liveness Probe ---
+          # Purpose: Detect deadlocks, panics, or hung processes.
+          # If this fails 3 times, kubelet RESTARTS the container.
+          # We use /healthz (cheap, no DB call) because we don't want temporary
+          # dependency issues to cause unnecessary restarts.
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 15
+            failureThreshold: 3
+
+          # --- Readiness Probe ---
+          # Purpose: Tell the Service whether this pod should receive traffic.
+          # If this fails 3 times, the pod is REMOVED from the endpoint list.
+          # The pod keeps running — it just stops getting new requests.
+          readinessProbe:
+            httpGet:
+              path: /readyz
+              port: http
+            initialDelaySeconds: 5
+            periodSeconds: 5
+            failureThreshold: 3
+
+          # --- Graceful Shutdown ---
+          # preStop hook: before SIGTERM is sent, wait 10 seconds.
+          # This gives the Service endpoint list time to update (remove this pod)
+          # BEFORE the container stops accepting connections.
+          lifecycle:
+            preStop:
+              exec:
+                command: ["/bin/sh", "-c", "sleep 10"]
+
+      # --- Pod Termination Grace Period ---
+      # After SIGTERM, kubelet waits this long before sending SIGKILL.
+      # Must be longer than the app's shutdown timeout (15s in main.go).
+      terminationGracePeriodSeconds: 30

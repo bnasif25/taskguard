@@ -1,0 +1,44 @@
+---
+# Ingress — exposes the Service to the internet via an Ingress Controller.
+# The Ingress Controller (e.g. nginx) reads this resource and configures itself.
+# TLS is terminated at the Ingress Controller.
+# NOTE: This manifest assumes cert-manager is installed for automatic TLS.
+# If not, remove the tls section and the cert-manager annotation.
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: taskguard
+  namespace: taskguard
+  labels:
+    app.kubernetes.io/name: taskguard
+    app.kubernetes.io/component: ingress
+  annotations:
+    # Use the nginx ingress controller
+    kubernetes.io/ingress.class: nginx
+    # cert-manager: automatically request a Let's Encrypt certificate
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+    # Force HTTPS redirect
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    # Rate limiting: 10 requests per second per IP
+    nginx.ingress.kubernetes.io/limit-rps: "10"
+    # Add security headers
+    nginx.ingress.kubernetes.io/configuration-snippet: |
+      add_header X-Frame-Options "SAMEORIGIN" always;
+      add_header X-Content-Type-Options "nosniff" always;
+      add_header X-XSS-Protection "1; mode=block" always;
+spec:
+  tls:
+    - hosts:
+        - taskguard.example.com
+      secretName: taskguard-tls
+  rules:
+    - host: taskguard.example.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: taskguard
+                port:
+                  number: 8080

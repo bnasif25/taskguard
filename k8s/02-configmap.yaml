@@ -1,0 +1,16 @@
+---
+# Non-sensitive configuration. Secrets live in the Secret manifest.
+# These values are injected as environment variables into the container.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: taskguard-config
+  namespace: taskguard
+  labels:
+    app.kubernetes.io/name: taskguard
+    app.kubernetes.io/component: config
+data:
+  # Go logging level
+  LOG_LEVEL: "info"
+  # Server port (must match containerPort in Deployment)
+  PORT: "8080"

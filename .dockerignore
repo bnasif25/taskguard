@@ -1,0 +1,10 @@
+# Ignore files that should not be copied into the Docker build context
+.git
+.gitignore
+README.md
+Makefile
+k8s/
+*.md
+.env
+*.yaml
+*.yml
