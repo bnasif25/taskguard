@@ -2,7 +2,7 @@
 # This reduces attack surface and image size.
 
 # ---------- STAGE 1: Builder ----------
-FROM golang:1.22-alpine AS builder
+FROM golang:1.26.8-alpine3.24@sha256:34efdd6036c92e155c8b0162a5da7626586b612ea636590035602c970eece564 AS builder
 
 # Install git + ca-certificates so 'go mod download' can fetch from GitHub.
 RUN apk add --no-cache git ca-certificates
@@ -26,17 +26,14 @@ RUN CGO_ENABLED=0 go build \
     main.go
 
 # ---------- STAGE 2: Runtime ----------
-FROM alpine:3.19
-
-# Add ca-certificates for HTTPS outbound (e.g. if you add OAuth later).
-# Add tzdata for correct timezone in logs.
-RUN apk add --no-cache ca-certificates tzdata
-
-# Create a non-root user. Running as root in a container is a security risk.
-# If an attacker escapes the container, they gain root on the host.
-RUN adduser -D -u 1000 taskguard
+# The app is a static binary, so it needs no shell or package manager at runtime.
+# A scratch image removes unused OS packages and their vulnerability surface.
+FROM scratch
 
 WORKDIR /app
+
+# Keep the standard certificate bundle available if HTTPS clients are added later.
+COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
 
 # Copy only the compiled binary from the builder stage.
 COPY --from=builder /app/taskguard ./
@@ -45,7 +42,7 @@ COPY --from=builder /app/taskguard ./
 EXPOSE 8080
 
 # Switch to non-root user BEFORE starting the app.
-USER 1000
+USER 1000:1000
 
 # Run the binary directly (no shell). Using ENTRYPOINT makes the container
 # behave like the binary itself — signals are passed correctly.

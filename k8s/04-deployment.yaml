@@ -19,7 +19,7 @@ spec:
 
   # RollingUpdate with maxUnavailable: 0 means:
   # "Never drop below the desired replica count during an update."
-  # This ensures zero-downtime deployments.
+  # This supports availability during a rollout; application behavior still matters.
   strategy:
     type: RollingUpdate
     rollingUpdate:
@@ -36,10 +36,6 @@ spec:
       labels:
         app.kubernetes.io/name: taskguard
         app.kubernetes.io/component: api
-      annotations:
-        # Force rolling restart when ConfigMap changes.
-        # Without this, pods don't restart when config updates.
-        checksum/config: "${CONFIG_CHECKSUM}"
     spec:
       # --- Security Context (Pod level) ---
       # runAsNonRoot: container cannot run as uid 0 (root).
@@ -53,9 +49,21 @@ spec:
           type: RuntimeDefault
 
       # --- Service Account ---
-      # A dedicated ServiceAccount with minimal RBAC permissions.
-      # Using 'default' is acceptable for this demo, but production would use a custom SA.
+      # A dedicated ServiceAccount with zero Kubernetes API permissions.
+      # The app does not call the API, so no Role or RoleBinding is needed.
       serviceAccountName: taskguard
+      automountServiceAccountToken: false
+
+      # Prefer spreading replicas across nodes in a multi-node cluster. This is
+      # a soft constraint so the two Pods still fit on the one-node Minikube lab.
+      topologySpreadConstraints:
+        - maxSkew: 1
+          topologyKey: kubernetes.io/hostname
+          whenUnsatisfiable: ScheduleAnyway
+          labelSelector:
+            matchLabels:
+              app.kubernetes.io/name: taskguard
+              app.kubernetes.io/component: api
 
       containers:
         - name: taskguard
@@ -70,8 +78,6 @@ spec:
           envFrom:
             - configMapRef:
                 name: taskguard-config
-            - secretRef:
-                name: taskguard-secrets
 
           # --- Resource Limits ---
           # requests: what the scheduler uses to place the pod on a node.
@@ -88,15 +94,19 @@ spec:
 
           # --- Security Context (Container level) ---
           # allowPrivilegeEscalation: false = process cannot gain more privileges.
-          # readOnlyRootFilesystem: false = we need to write to /tmp (Go runtime uses it).
-          #   For production, set this to true and mount an emptyDir for /tmp.
+          # readOnlyRootFilesystem prevents changes to the container image.
+          # A small writable emptyDir is mounted only at /tmp.
           # capabilities drop ALL: remove all Linux capabilities.
           securityContext:
             allowPrivilegeEscalation: false
-            readOnlyRootFilesystem: false
+            readOnlyRootFilesystem: true
             capabilities:
               drop:
                 - ALL
+
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
 
           # --- Startup Probe ---
           # Purpose: Give the app time to initialize before liveness/readiness begin.
@@ -141,10 +151,16 @@ spec:
           # BEFORE the container stops accepting connections.
           lifecycle:
             preStop:
-              exec:
-                command: ["/bin/sh", "-c", "sleep 10"]
+              # Kubelet performs the sleep; the scratch image needs no shell.
+              sleep:
+                seconds: 10
 
       # --- Pod Termination Grace Period ---
       # After SIGTERM, kubelet waits this long before sending SIGKILL.
       # Must be longer than the app's shutdown timeout (15s in main.go).
       terminationGracePeriodSeconds: 30
+
+      volumes:
+        - name: tmp
+          emptyDir:
+            sizeLimit: 16Mi

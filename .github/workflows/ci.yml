@@ -1,0 +1,100 @@
+name: TaskGuard CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  code-and-manifests:
+    name: Code tests and Kubernetes validation
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Check out source
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+
+      - name: Install Go
+        uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff # v5
+        with:
+          go-version: 1.26.8
+          cache: true
+
+      - name: Check formatting
+        run: test -z "$(gofmt -l .)"
+
+      - name: Run static analysis
+        run: go vet ./...
+
+      - name: Check shell scripts
+        run: shellcheck scripts/*.sh
+
+      - name: Run tests with race detection
+        run: go test -race -coverprofile=coverage.out ./...
+
+      - name: Build application
+        run: go build -trimpath ./...
+
+      - name: Install pinned manifest tools
+        run: |
+          go install sigs.k8s.io/kustomize/kustomize/v5@v5.8.1
+          go install github.com/yannh/kubeconform/cmd/kubeconform@v0.8.0
+
+      - name: Render and validate Kubernetes manifests
+        run: |
+          "$(go env GOPATH)/bin/kustomize" build k8s > /tmp/taskguard-rendered.yaml
+          "$(go env GOPATH)/bin/kubeconform" \
+            -strict \
+            -summary \
+            -ignore-missing-schemas \
+            -kubernetes-version 1.35.0 \
+            /tmp/taskguard-rendered.yaml
+
+  container-security:
+    name: Container build and security scans
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Check out source
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+
+      - name: Configure Docker Buildx
+        uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3
+
+      - name: Build container image
+        run: docker buildx build --load --tag taskguard:ci .
+
+      - name: Verify hardened container and graceful shutdown
+        run: IMAGE=taskguard:ci ./scripts/container-test.sh
+
+      - name: Prepare pinned Trivy scanner
+        run: |
+          docker pull aquasec/trivy:0.74.0@sha256:62b1e65e8869bc4b4c6aa4fa2b21595256c7c2f6018a9d9ad61caf87187c1969
+          docker volume create taskguard-trivy-cache
+
+      - name: Scan source, dependencies, secrets, and configuration
+        run: |
+          docker run --rm \
+            -v "$PWD:/work" \
+            -v taskguard-trivy-cache:/root/.cache/trivy \
+            aquasec/trivy:0.74.0@sha256:62b1e65e8869bc4b4c6aa4fa2b21595256c7c2f6018a9d9ad61caf87187c1969 \
+            fs --exit-code 1 --severity HIGH,CRITICAL \
+            --scanners vuln,misconfig,secret --ignore-unfixed /work
+
+      - name: Scan container image
+        run: |
+          docker run --rm \
+            -v /var/run/docker.sock:/var/run/docker.sock \
+            -v taskguard-trivy-cache:/root/.cache/trivy \
+            aquasec/trivy:0.74.0@sha256:62b1e65e8869bc4b4c6aa4fa2b21595256c7c2f6018a9d9ad61caf87187c1969 \
+            image --exit-code 1 --severity HIGH,CRITICAL \
+            --ignore-unfixed taskguard:ci

@@ -9,7 +9,6 @@ namespace: taskguard
 resources:
   - 01-namespace.yaml
   - 02-configmap.yaml
-  - 03-secret.yaml
   - 04-deployment.yaml
   - 05-service.yaml
   - 05a-serviceaccount.yaml
@@ -26,8 +25,7 @@ labels:
       app.kubernetes.io/managed-by: kustomize
     includeSelectors: true
 
-# Optional: patch the Deployment image tag dynamically.
-# In CI/CD, you would set this to the Git commit SHA.
+# The local image is built directly into Minikube by `make deploy`.
 images:
   - name: taskguard
-    newTag: latest
+    newTag: 1.0.0

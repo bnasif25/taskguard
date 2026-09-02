@@ -1,5 +1,5 @@
 // TaskGuard — A minimal task tracker API built for Kubernetes demonstration.
-// Every line is intentional. Read the comments to understand why each piece exists.
+// Comments explain the design and its deliberate learning-lab limitations.
 
 package main
 
@@ -11,6 +11,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"strings"
 	"sync"
 	"syscall"
 	"time"
@@ -25,10 +26,10 @@ import (
 // Task is the only domain entity. We keep it flat and JSON-friendly.
 // ID is a string (not int) so we can use UUIDs later without changing the API.
 type Task struct {
-	ID        string    `json:"id"`        // Unique identifier
-	Title     string    `json:"title"`     // What needs to be done
-	Done      bool      `json:"done"`      // Completion status
-	CreatedAt time.Time `json:"created_at"`// Timestamp for observability demos
+	ID        string    `json:"id"`         // Unique identifier
+	Title     string    `json:"title"`      // What needs to be done
+	Done      bool      `json:"done"`       // Completion status
+	CreatedAt time.Time `json:"created_at"` // Timestamp for observability demos
 }
 
 // ---------------------------------------------------------------------------
@@ -40,9 +41,9 @@ type Task struct {
 // When a pod restarts, tasks disappear. That is a FEATURE for this demo:
 // it lets us show StatefulSets vs Deployments, emptyDir vs PVCs, etc.
 type Store struct {
-	mu     sync.RWMutex      // RWMutex allows many readers OR one writer
-	tasks  map[string]Task   // Key = Task.ID
-	nextID int               // Simple auto-increment counter
+	mu     sync.RWMutex    // RWMutex allows many readers OR one writer
+	tasks  map[string]Task // Key = Task.ID
+	nextID int             // Simple auto-increment counter
 }
 
 func NewStore() *Store {
@@ -80,7 +81,8 @@ func (s *Store) Create(title string) Task {
 	}
 	s.tasks[t.ID] = t
 	s.nextID++
-	tasksCreatedTotal.Inc() // Prometheus counter increment
+	tasksCreatedTotal.Inc()
+	tasksActive.Inc()
 	return t
 }
 
@@ -105,6 +107,7 @@ func (s *Store) Delete(id string) bool {
 	}
 	delete(s.tasks, id)
 	tasksDeletedTotal.Inc()
+	tasksActive.Dec()
 	return true
 }
 
@@ -153,8 +156,8 @@ func init() {
 // ---------------------------------------------------------------------------
 // ready is controlled via POST /readyz/disable and POST /readyz/enable.
 // This lets you DEMONSTRATE readiness probes live in the assessment:
-// 1. kubectl exec into pod, curl -X POST localhost:8080/readyz/disable
-// 2. Watch pod leave the Service endpoint list (kubectl get endpoints)
+// 1. Port-forward a specific Pod, then POST /readyz/disable through the tunnel
+// 2. Watch its ready condition become false in the Service's EndpointSlice
 // 3. curl -X POST localhost:8080/readyz/enable
 // 4. Watch pod rejoin
 // This proves you understand the difference between liveness and readiness.
@@ -247,7 +250,6 @@ func readyzEnableHandler(w http.ResponseWriter, r *http.Request) {
 func listTasksHandler(store *Store) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		tasks := store.List()
-		tasksActive.Set(float64(len(tasks)))
 		w.Header().Set("Content-Type", "application/json")
 		json.NewEncoder(w).Encode(tasks)
 	}
@@ -297,6 +299,40 @@ func deleteTaskHandler(store *Store) http.HandlerFunc {
 	}
 }
 
+// newRouter keeps route construction separate from process startup. This makes
+// the complete HTTP API testable without opening a real network port.
+func newRouter(store *Store) *http.ServeMux {
+	mux := http.NewServeMux()
+
+	// Kubernetes probe polling is intentionally excluded from request metrics.
+	mux.HandleFunc("GET /healthz", healthzHandler)
+	mux.HandleFunc("GET /readyz", readyzHandler)
+	mux.HandleFunc("POST /readyz/disable", readyzDisableHandler)
+	mux.HandleFunc("POST /readyz/enable", readyzEnableHandler)
+
+	mux.Handle("GET /metrics", promhttp.Handler())
+
+	mux.HandleFunc("GET /tasks", instrument(listTasksHandler(store)))
+	mux.HandleFunc("POST /tasks", instrument(createTaskHandler(store)))
+	mux.HandleFunc("PUT /tasks/{id}/toggle", instrument(toggleTaskHandler(store)))
+	mux.HandleFunc("DELETE /tasks/{id}", instrument(deleteTaskHandler(store)))
+
+	return mux
+}
+
+func configuredLogLevel(value string) slog.Level {
+	switch strings.ToLower(value) {
+	case "debug":
+		return slog.LevelDebug
+	case "warn", "warning":
+		return slog.LevelWarn
+	case "error":
+		return slog.LevelError
+	default:
+		return slog.LevelInfo
+	}
+}
+
 // ---------------------------------------------------------------------------
 // MAIN
 // ---------------------------------------------------------------------------
@@ -306,7 +342,7 @@ func main() {
 	// log aggregation systems (Fluent Bit, Loki, CloudWatch) parse JSON easily.
 	// Text logs require regex parsing which is fragile.
 	logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{
-		Level: slog.LevelInfo,
+		Level: configuredLogLevel(os.Getenv("LOG_LEVEL")),
 	}))
 	slog.SetDefault(logger)
 
@@ -326,24 +362,8 @@ func main() {
 	store := NewStore()
 
 	// --- Router ---
-	// Go 1.22 introduced PathValue routing. No external router needed.
-	// This keeps dependencies minimal — only prometheus/client_golang.
-	mux := http.NewServeMux()
-
-	// Probes (uninstrumented — probes should not affect app metrics)
-	mux.HandleFunc("GET /healthz", healthzHandler)
-	mux.HandleFunc("GET /readyz", readyzHandler)
-	mux.HandleFunc("POST /readyz/disable", readyzDisableHandler)
-	mux.HandleFunc("POST /readyz/enable", readyzEnableHandler)
-
-	// Metrics (uninstrumented — prometheus has its own instrumentation)
-	mux.Handle("GET /metrics", promhttp.Handler())
-
-	// API (instrumented for latency + request counts)
-	mux.HandleFunc("GET /tasks", instrument(listTasksHandler(store)))
-	mux.HandleFunc("POST /tasks", instrument(createTaskHandler(store)))
-	mux.HandleFunc("PUT /tasks/{id}/toggle", instrument(toggleTaskHandler(store)))
-	mux.HandleFunc("DELETE /tasks/{id}", instrument(deleteTaskHandler(store)))
+	// Go 1.22 introduced PathValue routing. No external router is needed.
+	mux := newRouter(store)
 
 	// --- Server with timeouts ---
 	// Default http.ListenAndServe has NO timeouts. In production this is dangerous:
@@ -351,9 +371,9 @@ func main() {
 	server := &http.Server{
 		Addr:         ":" + port,
 		Handler:      mux,
-		ReadTimeout:  5 * time.Second,  // Time to read the full request
-		WriteTimeout: 10 * time.Second, // Time to write the full response
-		IdleTimeout:  120 * time.Second,// Time to keep idle connections open (HTTP keep-alive)
+		ReadTimeout:  5 * time.Second,   // Time to read the full request
+		WriteTimeout: 10 * time.Second,  // Time to write the full response
+		IdleTimeout:  120 * time.Second, // Time to keep idle connections open (HTTP keep-alive)
 	}
 
 	// --- Graceful shutdown ---
@@ -361,10 +381,10 @@ func main() {
 	// shutdownChan coordinates clean exit.
 	shutdownChan := make(chan struct{})
 	go func() {
+		defer close(shutdownChan)
 		slog.Info("server starting", "addr", server.Addr)
 		if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 			slog.Error("server failed to start", "error", err)
-			close(shutdownChan)
 		}
 	}()
 
@@ -375,7 +395,14 @@ func main() {
 	sigChan := make(chan os.Signal, 1)
 	signal.Notify(sigChan, syscall.SIGTERM, syscall.SIGINT)
 
-	<-sigChan // Block until signal received
+	defer signal.Stop(sigChan)
+	select {
+	case <-sigChan:
+		// Normal shutdown requested by Kubernetes or the local terminal.
+	case <-shutdownChan:
+		// A bind/listen failure must exit instead of waiting forever for a signal.
+		os.Exit(1)
+	}
 	slog.Info("shutdown signal received, draining connections...")
 
 	// Create a context with timeout for the shutdown.
@@ -385,6 +412,7 @@ func main() {
 
 	if err := server.Shutdown(ctx); err != nil {
 		slog.Error("graceful shutdown failed", "error", err)
+		_ = server.Close()
 	} else {
 		slog.Info("server shut down gracefully")
 	}
