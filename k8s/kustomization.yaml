@@ -20,9 +20,11 @@ resources:
   - 10-servicemonitor.yaml
   - 11-prometheus-rule.yaml
 
-commonLabels:
-  app.kubernetes.io/name: taskguard
-  app.kubernetes.io/managed-by: kustomize
+labels:
+  - pairs:
+      app.kubernetes.io/name: taskguard
+      app.kubernetes.io/managed-by: kustomize
+    includeSelectors: true
 
 # Optional: patch the Deployment image tag dynamically.
 # In CI/CD, you would set this to the Git commit SHA.

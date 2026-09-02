@@ -48,7 +48,7 @@ spec:
         # If a pod restarts more than 3 times in 10 minutes, it's unhealthy.
         - alert: TaskGuardCrashLooping
           expr: |
-            rate(kube_pod_container_status_restarts_total{namespace="taskguard"}[10m]) > 0.3
+            increase(kube_pod_container_status_restarts_total{namespace="taskguard"}[10m]) > 3
           for: 2m
           labels:
             severity: critical

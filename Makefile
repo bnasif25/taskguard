@@ -1,7 +1,7 @@
-# Single entry point for the entire project.
-# The competition rules require: "A single entry point (e.g., Makefile or script) for deployment."
+# A simple, single entry point for common project operations.
+# Run `make deploy` to apply the Kubernetes resources and wait for the rollout.
 
-.PHONY: all build test push deploy clean
+.PHONY: all build test push deploy verify clean lint
 
 # ---------------------------------------------------------------------------
 # Variables
