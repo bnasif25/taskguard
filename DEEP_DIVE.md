@@ -1,6 +1,11 @@
-# Deep Dive: Understanding Every Line of main.go
+# Deep Dive: Understanding TaskGuard's Design
 
-This document exists so you can **explain and modify** every part of the application during the live assessment. Read it carefully. If a judge asks "why did you do X?" the answer is in this file.
+These learning notes explain the main design choices. Examples are excerpts, not a replacement for the current `main.go` and `main_test.go`. The participant should review and practise explaining the final changes before recording or a live assessment.
+
+The final version constructs routes in `newRouter`, honours `LOG_LEVEL` through
+`configuredLogLevel`, updates the active-task gauge on create/delete, and has
+automated HTTP tests. The container now uses `scratch` without a shell;
+Kubernetes performs the ten-second pre-stop sleep itself.
 
 ---
 
@@ -383,10 +388,10 @@ server := &http.Server{
 ```go
 shutdownChan := make(chan struct{})
 go func() {
+    defer close(shutdownChan)
     slog.Info("server starting", "addr", server.Addr)
     if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
         slog.Error("server failed to start", "error", err)
-        close(shutdownChan)
     }
 }()
 ```
@@ -397,6 +402,9 @@ go func() {
 
 **Why check `err != http.ErrServerClosed`?** `Shutdown()` causes `ListenAndServe` to return `http.ErrServerClosed`. This is expected, not an error.
 
+The deferred close runs on both normal and unexpected returns. Closing only in
+the error branch caused the original normal shutdown to wait forever.
+
 ---
 
 ## 8. Graceful Shutdown
@@ -405,7 +413,12 @@ go func() {
 sigChan := make(chan os.Signal, 1)
 signal.Notify(sigChan, syscall.SIGTERM, syscall.SIGINT)
 
-<-sigChan // Block until signal received
+select {
+case <-sigChan:
+    // Proceed to graceful shutdown.
+case <-shutdownChan:
+    os.Exit(1) // Unexpected startup failure must not wait forever.
+}
 ```
 
 **What is `signal.Notify`?** It tells the OS to send `SIGTERM` and `SIGINT` to our `sigChan` instead of terminating the process immediately.
@@ -422,6 +435,7 @@ defer cancel()
 
 if err := server.Shutdown(ctx); err != nil {
     slog.Error("graceful shutdown failed", "error", err)
+    _ = server.Close()
 } else {
     slog.Info("server shut down gracefully")
 }
@@ -430,9 +444,11 @@ if err := server.Shutdown(ctx); err != nil {
 **What does `server.Shutdown(ctx)` do?**
 1. Closes the listening socket (no new connections accepted)
 2. Waits for all active requests to finish
-3. If the context expires first, force-closes remaining connections
+3. If the context expires first, returns an error; our explicit `server.Close()` then closes remaining connections
 
-**Why 15 seconds?** Kubernetes sends SIGTERM, then waits `terminationGracePeriodSeconds` (30s in our Deployment) before sending SIGKILL. We use 15s to leave a safety margin.
+**Why 15 seconds?** The 30-second termination budget includes the ten-second
+pre-stop sleep and the application's shutdown. Fifteen seconds for the app
+leaves roughly five seconds of margin before Kubernetes may use SIGKILL.
 
 **What is `context.WithTimeout`?** Creates a context that automatically cancels after the specified duration. If shutdown takes longer than 15s, the context fires and `Shutdown` returns an error.
 
@@ -446,7 +462,9 @@ if err := server.Shutdown(ctx); err != nil {
 A: Single static binary, no runtime, fast startup, built-in concurrency. Smaller image = faster pod startup = better HPA response.
 
 **Q: Why in-memory and not Redis?**
-A: The demo focuses on Kubernetes behavior. A database adds complexity without scoring points. I can add Redis later by changing the Store interface.
+A: The demo focuses on Kubernetes behavior. A production version needs shared,
+durable storage; adding it requires changing the store implementation and
+designing persistence, backups and recovery.
 
 **Q: What's the difference between liveness and readiness?**
 A: Liveness failure = kubelet restarts the container. Readiness failure = pod removed from Service endpoints but keeps running.

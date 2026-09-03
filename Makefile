@@ -51,9 +51,8 @@ cluster: check-tools
 		minikube start -p $(MINIKUBE_PROFILE) --driver=docker --kubernetes-version=$(KUBERNETES_VERSION) \
 			--memory=$(MINIKUBE_MEMORY) --cpus=$(MINIKUBE_CPUS); \
 	fi
-	@echo "==> Enabling metrics-server and ingress add-ons"
+	@echo "==> Enabling the metrics-server add-on"
 	@minikube addons enable metrics-server -p $(MINIKUBE_PROFILE) >/dev/null
-	@minikube addons enable ingress -p $(MINIKUBE_PROFILE) >/dev/null
 
 monitoring: cluster
 	@echo "==> Installing kube-prometheus-stack $(PROMETHEUS_CHART_VERSION)"
@@ -113,6 +112,7 @@ deploy: monitoring image
 	@echo "==> Applying TaskGuard Kubernetes resources"
 	$(KUBECTL) apply -k $(K8S_DIR)
 	@$(KUBECTL) delete secret taskguard-secrets -n $(APP_NAME) --ignore-not-found=true >/dev/null
+	@$(KUBECTL) delete ingress taskguard -n $(APP_NAME) --ignore-not-found=true >/dev/null
 	@echo "==> Restarting Pods so ConfigMap values are refreshed"
 	$(KUBECTL) rollout restart deployment/$(APP_NAME) -n $(APP_NAME)
 	@echo "==> Waiting for the TaskGuard rollout"

@@ -1,0 +1,24 @@
+==> Starting Minikube v1.35.1 with the Docker driver
+* [taskguard-rehearsal] minikube v1.38.1 on Darwin 26.6 (arm64)
+  - MINIKUBE_PROFILE=taskguard-rehearsal
+* Using the docker driver based on existing profile
+* Starting "taskguard-rehearsal" primary control-plane node in "taskguard-rehearsal" cluster
+* Pulling base image v0.0.50 ...
+* Stopping node "taskguard-rehearsal"  ...
+* Powering off "taskguard-rehearsal" via SSH ...
+* Deleting "taskguard-rehearsal" in docker ...
+! StartHost failed, but will try again: creating host: create: provisioning: getting cluster config: cluster "taskguard-rehearsal" does not exist
+* Failed to start docker container. Running "minikube delete -p taskguard-rehearsal" may fix it: creating host: create: provisioning: getting cluster config: cluster "taskguard-rehearsal" does not exist
+
+X Exiting due to GUEST_PROVISION: error provisioning guest: Failed to start host: creating host: create: provisioning: getting cluster config: cluster "taskguard-rehearsal" does not exist
+*
+╭─────────────────────────────────────────────────────────────────────────────────────────────╮
+│                                                                                             │
+│    * If the above advice does not help, please let us know:                                 │
+│      https://github.com/kubernetes/minikube/issues/new/choose                               │
+│                                                                                             │
+│    * Please run `minikube logs --file=logs.txt` and attach logs.txt to the GitHub issue.    │
+│                                                                                             │
+╰─────────────────────────────────────────────────────────────────────────────────────────────╯
+
+make: *** [cluster] Error 80

@@ -1,0 +1,65 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1040 760" role="img" aria-labelledby="title desc">
+<title id="title">TaskGuard Kubernetes architecture</title>
+<desc id="desc">Client traffic reaches two independent in-memory TaskGuard replicas through a Service. Deployment, HPA and kubelet control workload behavior. ServiceMonitor configures Prometheus to scrape both pods.</desc>
+<defs>
+<pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse"><path d="M40 0 H0 V40" fill="none" stroke="#1e293b" stroke-width=".5"/></pattern>
+<marker id="a22d3ee" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><path d="M0 0 L8 3 L0 6 Z" fill="#22d3ee"/></marker>
+<marker id="a34d399" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><path d="M0 0 L8 3 L0 6 Z" fill="#34d399"/></marker>
+<marker id="afbbf24" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><path d="M0 0 L8 3 L0 6 Z" fill="#fbbf24"/></marker>
+<marker id="aa78bfa" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><path d="M0 0 L8 3 L0 6 Z" fill="#a78bfa"/></marker>
+<marker id="afb923c" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><path d="M0 0 L8 3 L0 6 Z" fill="#fb923c"/></marker>
+</defs>
+<style>text{font-family:'SF Mono','Cascadia Code',monospace;fill:#e2e8f0} .label{font-size:12px;font-weight:600}.sub{font-size:9px;fill:#94a3b8}.note{font-size:10px;fill:#94a3b8}</style>
+<rect width="1040" height="760" fill="#0f172a"/><rect width="1040" height="760" fill="url(#grid)"/>
+<rect x="30" y="200" width="980" height="470" rx="12" fill="none" stroke="#fbbf24" stroke-dasharray="8 4"/>
+<text x="45" y="217" class="sub" style="fill:#fbbf24">MINIKUBE · single-node learning cluster</text>
+<rect x="280" y="460" width="490" height="130" rx="10" fill="none" stroke="#34d399" stroke-dasharray="4 4"/>
+<text x="525" y="478" text-anchor="middle" class="sub" style="fill:#34d399">2 replicas · separate memory</text>
+<path d="M430 130 H400 V490" fill="none" stroke="#22d3ee" stroke-width="1.5"  marker-end="url(#a22d3ee)"/>
+<path d="M520 290 V350" fill="none" stroke="#22d3ee" stroke-width="1.5"  marker-end="url(#a22d3ee)"/>
+<path d="M520 410 V440 H400 V490" fill="none" stroke="#34d399" stroke-width="1.5"  marker-end="url(#a34d399)"/>
+<path d="M520 440 H650 V490" fill="none" stroke="#34d399" stroke-width="1.5"  marker-end="url(#a34d399)"/>
+<path d="M150 350 V290" fill="none" stroke="#fbbf24" stroke-width="1.5" stroke-dasharray="5 4" marker-end="url(#afbbf24)"/>
+<path d="M250 260 H270 V470 H280" fill="none" stroke="#fbbf24" stroke-width="1.5" stroke-dasharray="5 4" marker-end="url(#afbbf24)"/>
+<path d="M250 525 H300" fill="none" stroke="#fbbf24" stroke-width="1.5" stroke-dasharray="5 4" marker-end="url(#afbbf24)"/>
+<path d="M905 410 V490" fill="none" stroke="#a78bfa" stroke-width="1.5" stroke-dasharray="5 4" marker-end="url(#aa78bfa)"/>
+<path d="M905 560 V625 H400 V560" fill="none" stroke="#fb923c" stroke-width="1.5" stroke-dasharray="5 4" marker-end="url(#afb923c)"/>
+<path d="M650 625 V560" fill="none" stroke="#fb923c" stroke-width="1.5" stroke-dasharray="5 4" marker-end="url(#afb923c)"/>
+<rect x="430" y="100" width="180" height="60" rx="6" fill="#0f172a"/><rect x="430" y="100" width="180" height="60" rx="6" fill="#083344" fill-opacity=".4" stroke="#22d3ee" stroke-width="1.5"/>
+<text x="520" y="124" text-anchor="middle" class="label">Postman / curl</text>
+<text x="520" y="142" text-anchor="middle" class="sub">local port-forward to one Pod</text>
+<rect x="430" y="230" width="180" height="60" rx="6" fill="#0f172a"/><rect x="430" y="230" width="180" height="60" rx="6" fill="#083344" fill-opacity=".4" stroke="#22d3ee" stroke-width="1.5"/>
+<text x="520" y="254" text-anchor="middle" class="label">In-cluster client</text>
+<text x="520" y="272" text-anchor="middle" class="sub">Service DNS · HTTP</text>
+<rect x="430" y="350" width="180" height="60" rx="6" fill="#0f172a"/><rect x="430" y="350" width="180" height="60" rx="6" fill="#064e3b" fill-opacity=".4" stroke="#34d399" stroke-width="1.5"/>
+<text x="520" y="374" text-anchor="middle" class="label">Service</text>
+<text x="520" y="392" text-anchor="middle" class="sub">taskguard:8080 · ClusterIP</text>
+<rect x="300" y="490" width="200" height="70" rx="6" fill="#0f172a"/><rect x="300" y="490" width="200" height="70" rx="6" fill="#064e3b" fill-opacity=".4" stroke="#34d399" stroke-width="1.5"/>
+<text x="400" y="514" text-anchor="middle" class="label">TaskGuard Pod A</text>
+<text x="400" y="532" text-anchor="middle" class="sub">static Go API · UID 1000</text><text x="400" y="545" text-anchor="middle" class="sub">its own in-memory task store</text>
+<rect x="550" y="490" width="200" height="70" rx="6" fill="#0f172a"/><rect x="550" y="490" width="200" height="70" rx="6" fill="#064e3b" fill-opacity=".4" stroke="#34d399" stroke-width="1.5"/>
+<text x="650" y="514" text-anchor="middle" class="label">TaskGuard Pod B</text>
+<text x="650" y="532" text-anchor="middle" class="sub">static Go API · UID 1000</text><text x="650" y="545" text-anchor="middle" class="sub">its own in-memory task store</text>
+<rect x="50" y="230" width="200" height="60" rx="6" fill="#0f172a"/><rect x="50" y="230" width="200" height="60" rx="6" fill="#78350f" fill-opacity=".4" stroke="#fbbf24" stroke-width="1.5"/>
+<text x="150" y="254" text-anchor="middle" class="label">Deployment</text>
+<text x="150" y="272" text-anchor="middle" class="sub">rolling update · 2 replicas</text>
+<rect x="50" y="350" width="200" height="60" rx="6" fill="#0f172a"/><rect x="50" y="350" width="200" height="60" rx="6" fill="#78350f" fill-opacity=".4" stroke="#fbbf24" stroke-width="1.5"/>
+<text x="150" y="374" text-anchor="middle" class="label">HPA · 2–10 replicas</text>
+<text x="150" y="392" text-anchor="middle" class="sub">CPU/memory from metrics-server</text>
+<rect x="50" y="490" width="200" height="70" rx="6" fill="#0f172a"/><rect x="50" y="490" width="200" height="70" rx="6" fill="#78350f" fill-opacity=".4" stroke="#fbbf24" stroke-width="1.5"/>
+<text x="150" y="514" text-anchor="middle" class="label">Kubelet</text>
+<text x="150" y="532" text-anchor="middle" class="sub">/healthz: 15s · restart decision</text><text x="150" y="545" text-anchor="middle" class="sub">/readyz: 5s · traffic decision</text>
+<rect x="820" y="350" width="170" height="60" rx="6" fill="#0f172a"/><rect x="820" y="350" width="170" height="60" rx="6" fill="#4c1d95" fill-opacity=".4" stroke="#a78bfa" stroke-width="1.5"/>
+<text x="905" y="374" text-anchor="middle" class="label">ServiceMonitor</text>
+<text x="905" y="392" text-anchor="middle" class="sub">Operator configures scraping</text>
+<rect x="820" y="490" width="170" height="70" rx="6" fill="#0f172a"/><rect x="820" y="490" width="170" height="70" rx="6" fill="#78350f" fill-opacity=".4" stroke="#fb923c" stroke-width="1.5"/>
+<text x="905" y="514" text-anchor="middle" class="label">Prometheus</text>
+<text x="905" y="532" text-anchor="middle" class="sub">collects /metrics every 15s</text><text x="905" y="545" text-anchor="middle" class="sub">history + alert rules</text>
+<text x="535" y="430" class="note">ready Pods only</text>
+<text x="60" y="580" class="note">Probes run against both Pods.</text>
+<text x="470" y="645" class="note" style="fill:#fb923c">Prometheus scrapes both Pod endpoints.</text>
+<text x="30" y="42" style="font-size:20px;font-weight:700">TaskGuard · from request to recovery</text>
+<text x="30" y="65" class="note">Current implementation · September 2026</text>
+<text x="30" y="705" class="note">Solid arrows: application traffic. Dashed arrows: control, checks or collection.</text>
+<text x="30" y="727" class="note" style="fill:#fb7185">Lab limits: per-Pod data loss on restart · no authentication · HTTP only · one node.</text>
+</svg>

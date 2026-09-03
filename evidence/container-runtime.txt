@@ -1,0 +1,5 @@
+PASS: image runs as UID/GID 1000 with a read-only root filesystem and responds to health checks
+{"time":"2026-09-02T18:25:56.369459216Z","level":"INFO","msg":"server starting","addr":":8080"}
+{"time":"2026-09-02T18:25:56.465257882Z","level":"INFO","msg":"shutdown signal received, draining connections..."}
+{"time":"2026-09-02T18:25:56.465328466Z","level":"INFO","msg":"server shut down gracefully"}
+PASS: SIGTERM caused a clean exit with code 0

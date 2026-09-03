@@ -1,0 +1,112 @@
+Wed Sep  2 18:26:14 UTC 2026
+[
+  {
+    "scrapeUrl": "http://10.244.0.43:8080/metrics",
+    "health": "up",
+    "lastError": ""
+  },
+  {
+    "scrapeUrl": "http://10.244.0.44:8080/metrics",
+    "health": "up",
+    "lastError": ""
+  }
+]
+{
+  "status": "success",
+  "results": [
+    {
+      "metric": {
+        "__name__": "up",
+        "container": "taskguard",
+        "endpoint": "http",
+        "instance": "10.244.0.43:8080",
+        "job": "taskguard",
+        "namespace": "taskguard",
+        "pod": "taskguard-747b584f8f-wlkhr",
+        "service": "taskguard"
+      },
+      "value": [
+        1788373574.820,
+        "1"
+      ]
+    },
+    {
+      "metric": {
+        "__name__": "up",
+        "container": "taskguard",
+        "endpoint": "http",
+        "instance": "10.244.0.44:8080",
+        "job": "taskguard",
+        "namespace": "taskguard",
+        "pod": "taskguard-747b584f8f-tgzcw",
+        "service": "taskguard"
+      },
+      "value": [
+        1788373574.820,
+        "1"
+      ]
+    }
+  ]
+}
+[
+  {
+    "name": "TaskGuardHighErrorRate",
+    "health": "ok",
+    "state": "inactive",
+    "lastError": null
+  },
+  {
+    "name": "TaskGuardHighLatency",
+    "health": "ok",
+    "state": "inactive",
+    "lastError": null
+  },
+  {
+    "name": "TaskGuardCrashLooping",
+    "health": "ok",
+    "state": "inactive",
+    "lastError": null
+  }
+]
+NAME                        READY   UP-TO-DATE   AVAILABLE   AGE   CONTAINERS   IMAGES            SELECTOR
+deployment.apps/taskguard   2/2     2            2           13d   taskguard    taskguard:1.0.0   app.kubernetes.io/component=api,app.kubernetes.io/managed-by=kustomize,app.kubernetes.io/name=taskguard
+
+NAME                             READY   STATUS    RESTARTS   AGE     IP            NODE       NOMINATED NODE   READINESS GATES
+pod/taskguard-747b584f8f-tgzcw   1/1     Running   0          5m16s   10.244.0.44   minikube   <none>           <none>
+pod/taskguard-747b584f8f-wlkhr   1/1     Running   0          5m22s   10.244.0.43   minikube   <none>           <none>
+
+NAME                                            REFERENCE              TARGETS                       MINPODS   MAXPODS   REPLICAS   AGE
+horizontalpodautoscaler.autoscaling/taskguard   Deployment/taskguard   cpu: 1%/70%, memory: 7%/80%   2         10        2          13d
+
+NAME                                   MIN AVAILABLE   MAX UNAVAILABLE   ALLOWED DISRUPTIONS   AGE
+poddisruptionbudget.policy/taskguard   1               N/A               1                     13d
+
+NAME                                             ADDRESSTYPE   PORTS   ENDPOINTS                 AGE
+endpointslice.discovery.k8s.io/taskguard-ghlvv   IPv4          8080    10.244.0.43,10.244.0.44   13d
+{
+  "image": "taskguard:1.0.0",
+  "podSecurity": {
+    "fsGroup": 1000,
+    "runAsGroup": 1000,
+    "runAsNonRoot": true,
+    "runAsUser": 1000,
+    "seccompProfile": {
+      "type": "RuntimeDefault"
+    }
+  },
+  "containerSecurity": {
+    "allowPrivilegeEscalation": false,
+    "capabilities": {
+      "drop": [
+        "ALL"
+      ]
+    },
+    "readOnlyRootFilesystem": true
+  },
+  "apiTokenMounted": false,
+  "preStop": {
+    "sleep": {
+      "seconds": 10
+    }
+  }
+}

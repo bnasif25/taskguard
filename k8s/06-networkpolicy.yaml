@@ -2,10 +2,9 @@
 # NetworkPolicy — default-deny with explicit allow rules.
 # Without a NetworkPolicy, ALL pods in the cluster can talk to this pod.
 # This manifest restricts ingress to:
-#   1. The ingress-nginx namespace (external traffic)
-#   2. The monitoring namespace (Prometheus scraping)
-#   3. Intra-namespace traffic (for sidecars/debugging)
-# Egress is unrestricted because the app needs outbound HTTPS for potential OAuth.
+#   1. The monitoring namespace (Prometheus scraping)
+#   2. Intra-namespace traffic (for clients/debugging)
+# Egress is unrestricted. The current app makes no outbound requests.
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
@@ -22,18 +21,7 @@ spec:
   policyTypes:
     - Ingress
   ingress:
-    # Rule 1: Allow traffic from the ingress controller.
-    # If your ingress controller lives in a different namespace,
-    # update the namespaceSelector below.
-    - from:
-        - namespaceSelector:
-            matchLabels:
-              app.kubernetes.io/name: ingress-nginx
-      ports:
-        - protocol: TCP
-          port: 8080
-
-    # Rule 2: Allow Prometheus scraping from the monitoring namespace.
+    # Rule 1: Allow Prometheus scraping from the monitoring namespace.
     - from:
         - namespaceSelector:
             matchLabels:
@@ -42,7 +30,7 @@ spec:
         - protocol: TCP
           port: 8080
 
-    # Rule 3: Allow intra-namespace traffic.
+    # Rule 2: Allow intra-namespace traffic.
     # Useful for debug sidecars or future service mesh.
     - from:
         - namespaceSelector:

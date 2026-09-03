@@ -1,0 +1,128 @@
+==> Building Go binary and local container image
+go build -trimpath -o bin/taskguard ./main.go
+docker build -t taskguard:1.0.0 .
+#0 building with "desktop-linux" instance using docker driver
+
+#1 [internal] load build definition from Dockerfile
+#1 transferring dockerfile: 1.80kB done
+#1 DONE 0.0s
+
+#2 [internal] load metadata for docker.io/library/golang:1.26.8-alpine3.24@sha256:34efdd6036c92e155c8b0162a5da7626586b612ea636590035602c970eece564
+#2 DONE 2.9s
+
+#3 [internal] load .dockerignore
+#3 transferring context: 176B done
+#3 DONE 0.0s
+
+#4 [stage-1 1/3] WORKDIR /app
+#4 DONE 0.0s
+
+#5 [builder 1/7] FROM docker.io/library/golang:1.26.8-alpine3.24@sha256:34efdd6036c92e155c8b0162a5da7626586b612ea636590035602c970eece564
+#5 resolve docker.io/library/golang:1.26.8-alpine3.24@sha256:34efdd6036c92e155c8b0162a5da7626586b612ea636590035602c970eece564 done
+#5 DONE 0.0s
+
+#6 [internal] load build context
+#6 transferring context: 81B done
+#6 DONE 0.0s
+
+#7 [builder 3/7] WORKDIR /app
+#7 CACHED
+
+#8 [builder 6/7] COPY main.go ./
+#8 CACHED
+
+#9 [builder 7/7] RUN CGO_ENABLED=0 go build     -ldflags '-s -w'     -o taskguard     main.go
+#9 CACHED
+
+#10 [stage-1 2/3] COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
+#10 CACHED
+
+#11 [builder 4/7] COPY go.mod go.sum ./
+#11 CACHED
+
+#12 [builder 2/7] RUN apk add --no-cache git ca-certificates
+#12 CACHED
+
+#13 [builder 5/7] RUN go mod download
+#13 CACHED
+
+#14 [stage-1 3/3] COPY --from=builder /app/taskguard ./
+#14 CACHED
+
+#15 exporting to image
+#15 exporting layers done
+#15 exporting manifest sha256:1d955c3d8a5dce3003fb9ccebc988bf5e53b6768024fa893b0b0cb27066a38fe done
+#15 exporting config sha256:2ba309e2764b39236f24ca53e4d35f6b41db2ec097374ea6872dc69c1c31d15e done
+#15 exporting attestation manifest sha256:7fdc9901a511e4a25fd2d6f66b411bd21d9a7f44e04aebda5d999d56c9e486d4 0.0s done
+#15 exporting manifest list sha256:9b76493411d555261614cb2962e84d304cacda8d569b875bdda9adb07bb8ac63 done
+#15 naming to docker.io/library/taskguard:1.0.0 done
+#15 unpacking to docker.io/library/taskguard:1.0.0 done
+#15 DONE 0.0s
+==> Scanning source, dependencies, secrets, and Kubernetes configuration
+docker run --rm -v "/Users/nasif.bhugaloo/Documents/1/Kube/taskguard:/work" -v taskguard-trivy-cache:/root/.cache/trivy aquasec/trivy:0.74.0@sha256:62b1e65e8869bc4b4c6aa4fa2b21595256c7c2f6018a9d9ad61caf87187c1969 fs \
+		--exit-code 1 --severity HIGH,CRITICAL --scanners vuln,misconfig,secret /work
+2026-09-03T04:54:54Z	INFO	[vuln] Vulnerability scanning is enabled
+2026-09-03T04:54:54Z	INFO	[misconfig] Misconfiguration scanning is enabled
+2026-09-03T04:54:54Z	INFO	[checks-client] Using existing checks from cache	path="/root/.cache/trivy/policy/content"
+2026-09-03T04:54:55Z	INFO	[secret] Secret scanning is enabled
+2026-09-03T04:54:55Z	INFO	[secret] If your scanning is slow, please try '--scanners vuln,misconfig' to disable secret scanning
+2026-09-03T04:54:55Z	INFO	[secret] Please see https://trivy.dev/docs/v0.74/guide/scanner/secret#recommendation for faster secret detection
+2026-09-03T04:54:55Z	INFO	Number of language-specific files	num=1
+2026-09-03T04:54:55Z	INFO	[gomod] Detecting vulnerabilities...
+2026-09-03T04:54:55Z	INFO	Detected config files	num=11
+2026-09-03T04:54:55Z	WARN	Using severities from other vendors for some vulnerabilities. Read https://trivy.dev/docs/v0.74/guide/scanner/vulnerability#severity-selection for details.
+
+Report Summary
+
+┌─────────────────────────────┬────────────┬─────────────────┬───────────────────┬─────────┐
+│           Target            │    Type    │ Vulnerabilities │ Misconfigurations │ Secrets │
+├─────────────────────────────┼────────────┼─────────────────┼───────────────────┼─────────┤
+│ go.mod                      │   gomod    │        0        │         -         │    -    │
+├─────────────────────────────┼────────────┼─────────────────┼───────────────────┼─────────┤
+│ Dockerfile                  │ dockerfile │        -        │         0         │    -    │
+├─────────────────────────────┼────────────┼─────────────────┼───────────────────┼─────────┤
+│ k8s/01-namespace.yaml       │ kubernetes │        -        │         0         │    -    │
+├─────────────────────────────┼────────────┼─────────────────┼───────────────────┼─────────┤
+│ k8s/02-configmap.yaml       │ kubernetes │        -        │         0         │    -    │
+├─────────────────────────────┼────────────┼─────────────────┼───────────────────┼─────────┤
+│ k8s/04-deployment.yaml      │ kubernetes │        -        │         0         │    -    │
+├─────────────────────────────┼────────────┼─────────────────┼───────────────────┼─────────┤
+│ k8s/05-service.yaml         │ kubernetes │        -        │         0         │    -    │
+├─────────────────────────────┼────────────┼─────────────────┼───────────────────┼─────────┤
+│ k8s/05a-serviceaccount.yaml │ kubernetes │        -        │         0         │    -    │
+├─────────────────────────────┼────────────┼─────────────────┼───────────────────┼─────────┤
+│ k8s/06-networkpolicy.yaml   │ kubernetes │        -        │         0         │    -    │
+├─────────────────────────────┼────────────┼─────────────────┼───────────────────┼─────────┤
+│ k8s/07-hpa.yaml             │ kubernetes │        -        │         0         │    -    │
+├─────────────────────────────┼────────────┼─────────────────┼───────────────────┼─────────┤
+│ k8s/08-pdb.yaml             │ kubernetes │        -        │         0         │    -    │
+├─────────────────────────────┼────────────┼─────────────────┼───────────────────┼─────────┤
+│ k8s/10-servicemonitor.yaml  │ kubernetes │        -        │         0         │    -    │
+├─────────────────────────────┼────────────┼─────────────────┼───────────────────┼─────────┤
+│ k8s/11-prometheus-rule.yaml │ kubernetes │        -        │         0         │    -    │
+└─────────────────────────────┴────────────┴─────────────────┴───────────────────┴─────────┘
+Legend:
+- '-': Not scanned
+- '0': Clean (no security findings detected)
+
+==> Scanning the built container image
+docker run --rm -v /var/run/docker.sock:/var/run/docker.sock -v taskguard-trivy-cache:/root/.cache/trivy aquasec/trivy:0.74.0@sha256:62b1e65e8869bc4b4c6aa4fa2b21595256c7c2f6018a9d9ad61caf87187c1969 image \
+		--exit-code 1 --severity HIGH,CRITICAL --ignore-unfixed taskguard:1.0.0
+2026-09-03T04:54:55Z	INFO	[vuln] Vulnerability scanning is enabled
+2026-09-03T04:54:55Z	INFO	[secret] Secret scanning is enabled
+2026-09-03T04:54:55Z	INFO	[secret] If your scanning is slow, please try '--scanners vuln' to disable secret scanning
+2026-09-03T04:54:55Z	INFO	[secret] Please see https://trivy.dev/docs/v0.74/guide/scanner/secret#recommendation for faster secret detection
+2026-09-03T04:54:55Z	INFO	Number of language-specific files	num=1
+2026-09-03T04:54:55Z	INFO	[gobinary] Detecting vulnerabilities...
+2026-09-03T04:54:55Z	WARN	Using severities from other vendors for some vulnerabilities. Read https://trivy.dev/docs/v0.74/guide/scanner/vulnerability#severity-selection for details.
+
+Report Summary
+
+┌───────────────┬──────────┬─────────────────┬─────────┐
+│    Target     │   Type   │ Vulnerabilities │ Secrets │
+├───────────────┼──────────┼─────────────────┼─────────┤
+│ app/taskguard │ gobinary │        0        │    -    │
+└───────────────┴──────────┴─────────────────┴─────────┘
+Legend:
+- '-': Not scanned
+- '0': Clean (no security findings detected)

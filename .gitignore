@@ -1,5 +1,5 @@
 # Ignore local build artifacts
-taskguard
+/taskguard
 bin/
 *.exe
 *.dll

@@ -1,0 +1,23 @@
+=== RUN   TestStoreLifecycle
+--- PASS: TestStoreLifecycle (0.00s)
+=== RUN   TestActiveTaskMetricChangesWithoutListing
+--- PASS: TestActiveTaskMetricChangesWithoutListing (0.00s)
+=== RUN   TestHealthAndReadiness
+2026/09/02 22:18:08 INFO readiness disabled via POST /readyz/disable
+2026/09/02 22:18:08 INFO readiness enabled via POST /readyz/enable
+--- PASS: TestHealthAndReadiness (0.00s)
+=== RUN   TestTaskAPI
+--- PASS: TestTaskAPI (0.00s)
+=== RUN   TestTaskAPIRejectsInvalidInput
+=== RUN   TestTaskAPIRejectsInvalidInput/invalid_JSON
+=== RUN   TestTaskAPIRejectsInvalidInput/missing_title
+--- PASS: TestTaskAPIRejectsInvalidInput (0.00s)
+    --- PASS: TestTaskAPIRejectsInvalidInput/invalid_JSON (0.00s)
+    --- PASS: TestTaskAPIRejectsInvalidInput/missing_title (0.00s)
+=== RUN   TestMetricsEndpoint
+--- PASS: TestMetricsEndpoint (0.00s)
+=== RUN   TestConfiguredLogLevel
+--- PASS: TestConfiguredLogLevel (0.00s)
+PASS
+coverage: 79.2% of statements
+ok  	taskguard	2.322s	coverage: 79.2% of statements

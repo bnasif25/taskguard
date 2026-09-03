@@ -1,0 +1,10 @@
+==> Checking Kubernetes workload state
+deployment.apps/taskguard condition met
+NAME                         READY   STATUS    RESTARTS   AGE
+taskguard-747b584f8f-tgzcw   1/1     Running   0          89s
+taskguard-747b584f8f-wlkhr   1/1     Running   0          95s
+==> Service has 2 ready endpoints
+==> Checking health and readiness
+==> Checking the task API
+==> Checking application metrics
+PASS: TaskGuard deployment, Service endpoints, API, and metrics are healthy

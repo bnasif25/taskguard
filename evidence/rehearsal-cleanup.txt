@@ -1,0 +1,19 @@
+==> Removing TaskGuard resources
+kubectl --context=taskguard-rehearsal delete -k ./k8s --ignore-not-found=true
+namespace "taskguard" deleted
+serviceaccount "taskguard" deleted from taskguard namespace
+configmap "taskguard-config" deleted from taskguard namespace
+service "taskguard" deleted from taskguard namespace
+deployment.apps "taskguard" deleted from taskguard namespace
+poddisruptionbudget.policy "taskguard" deleted from taskguard namespace
+horizontalpodautoscaler.autoscaling "taskguard" deleted from taskguard namespace
+prometheusrule.monitoring.coreos.com "taskguard-alerts" deleted from taskguard namespace
+servicemonitor.monitoring.coreos.com "taskguard" deleted from taskguard namespace
+networkpolicy.networking.k8s.io "taskguard-ingress-lockdown" deleted from taskguard namespace
+==> Deleting Minikube profile 'taskguard-rehearsal'
+minikube delete -p taskguard-rehearsal
+* Deleting "taskguard-rehearsal" in docker ...
+* Deleting container "taskguard-rehearsal" ...
+* Removing /Users/nasif.bhugaloo/.minikube/machines/taskguard-rehearsal ...
+* Removed all traces of the "taskguard-rehearsal" cluster.
+Switched to context "minikube".

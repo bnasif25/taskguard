@@ -1,0 +1,101 @@
+==> Baseline (minikube / taskguard)
+deployment "taskguard" successfully rolled out
+NAME                         READY   STATUS    RESTARTS   AGE   IP            NODE       NOMINATED NODE   READINESS GATES
+taskguard-747b584f8f-tgzcw   1/1     Running   0          91s   10.244.0.44   minikube   <none>           <none>
+taskguard-747b584f8f-wlkhr   1/1     Running   0          97s   10.244.0.43   minikube   <none>           <none>
+Known-good revision=11 image=taskguard:1.0.0 ready_endpoints=2
+==> Introducing a realistic bad-image rollout
+deployment.apps/taskguard image updated
+==> Expect a stalled rollout while old healthy replicas continue serving
+Waiting for deployment "taskguard" rollout to finish: 1 out of 2 new replicas have been updated...
+error: timed out waiting for the condition
+    Limits:
+      cpu:     200m
+      memory:  256Mi
+    Requests:
+      cpu:      100m
+      memory:   128Mi
+    Liveness:   http-get http://:http/healthz delay=10s timeout=1s period=15s #success=1 #failure=3
+    Readiness:  http-get http://:http/readyz delay=5s timeout=1s period=5s #success=1 #failure=3
+    Startup:    http-get http://:http/healthz delay=2s timeout=1s period=5s #success=1 #failure=12
+    Environment Variables from:
+      taskguard-config  ConfigMap  Optional: false
+    Environment:        <none>
+    Mounts:
+      /tmp from tmp (rw)
+Conditions:
+  Type                        Status
+  PodReadyToStartContainers   True
+  Initialized                 True
+  Ready                       False
+  ContainersReady             False
+  PodScheduled                True
+Volumes:
+  tmp:
+    Type:                     EmptyDir (a temporary directory that shares a pod's lifetime)
+    Medium:
+    SizeLimit:                16Mi
+QoS Class:                    Burstable
+Node-Selectors:               <none>
+Tolerations:                  node.kubernetes.io/not-ready:NoExecute op=Exists for 300s
+                              node.kubernetes.io/unreachable:NoExecute op=Exists for 300s
+Topology Spread Constraints:  kubernetes.io/hostname:ScheduleAnyway when max skew 1 is exceeded for selector app.kubernetes.io/component=api,app.kubernetes.io/managed-by=kustomize,app.kubernetes.io/name=taskguard
+Events:
+  Type     Reason     Age                From               Message
+  ----     ------     ----               ----               -------
+  Normal   Scheduled  46s                default-scheduler  Successfully assigned taskguard/taskguard-7b98498445-rwpbx to minikube
+  Normal   Pulling    28s (x2 over 45s)  kubelet            spec.containers{taskguard}: Pulling image "taskguard:does-not-exist"
+  Warning  Failed     25s (x2 over 42s)  kubelet            spec.containers{taskguard}: Failed to pull image "taskguard:does-not-exist": Error response from daemon: pull access denied for taskguard, repository does not exist or may require 'docker login': denied: requested access to the resource is denied
+  Warning  Failed     25s (x2 over 42s)  kubelet            spec.containers{taskguard}: Error: ErrImagePull
+  Normal   BackOff    14s (x2 over 42s)  kubelet            spec.containers{taskguard}: Back-off pulling image "taskguard:does-not-exist"
+  Warning  Failed     14s (x2 over 42s)  kubelet            spec.containers{taskguard}: Error: ImagePullBackOff
+NAME                                   DESIRED   CURRENT   READY   AGE     CONTAINERS   IMAGES                     SELECTOR
+replicaset.apps/taskguard-5698bf6b     0         0         0       10d     taskguard    taskguard:latest           app.kubernetes.io/component=api,app.kubernetes.io/managed-by=kustomize,app.kubernetes.io/name=taskguard,pod-template-hash=5698bf6b
+replicaset.apps/taskguard-58669fbc66   0         0         0       2m23s   taskguard    taskguard:1.0.0            app.kubernetes.io/component=api,app.kubernetes.io/managed-by=kustomize,app.kubernetes.io/name=taskguard,pod-template-hash=58669fbc66
+replicaset.apps/taskguard-65cdb4586c   0         0         0       7h57m   taskguard    taskguard:1.0.0            app.kubernetes.io/component=api,app.kubernetes.io/managed-by=kustomize,app.kubernetes.io/name=taskguard,pod-template-hash=65cdb4586c
+replicaset.apps/taskguard-6bb5fd5c9    0         0         0       2d9h    taskguard    taskguard:day17-buggy      app.kubernetes.io/component=api,app.kubernetes.io/managed-by=kustomize,app.kubernetes.io/name=taskguard,pod-template-hash=6bb5fd5c9
+replicaset.apps/taskguard-6d64f54bfd   0         0         0       7h57m   taskguard    taskguard:1.0.0            app.kubernetes.io/component=api,app.kubernetes.io/managed-by=kustomize,app.kubernetes.io/name=taskguard,pod-template-hash=6d64f54bfd
+replicaset.apps/taskguard-747b584f8f   2         2         2       2m23s   taskguard    taskguard:1.0.0            app.kubernetes.io/component=api,app.kubernetes.io/managed-by=kustomize,app.kubernetes.io/name=taskguard,pod-template-hash=747b584f8f
+replicaset.apps/taskguard-7b98498445   1         1         0       46s     taskguard    taskguard:does-not-exist   app.kubernetes.io/component=api,app.kubernetes.io/managed-by=kustomize,app.kubernetes.io/name=taskguard,pod-template-hash=7b98498445
+replicaset.apps/taskguard-84485b485c   0         0         0       13d     taskguard    taskguard:latest           app.kubernetes.io/component=api,app.kubernetes.io/managed-by=kustomize,app.kubernetes.io/name=taskguard,pod-template-hash=84485b485c
+replicaset.apps/taskguard-fdbbcdb64    0         0         0       33h     taskguard    taskguard:latest           app.kubernetes.io/component=api,app.kubernetes.io/managed-by=kustomize,app.kubernetes.io/name=taskguard,pod-template-hash=fdbbcdb64
+
+NAME                             READY   STATUS         RESTARTS   AGE     IP            NODE       NOMINATED NODE   READINESS GATES
+pod/taskguard-747b584f8f-tgzcw   1/1     Running        0          2m17s   10.244.0.44   minikube   <none>           <none>
+pod/taskguard-747b584f8f-wlkhr   1/1     Running        0          2m23s   10.244.0.43   minikube   <none>           <none>
+pod/taskguard-7b98498445-rwpbx   0/1     ErrImagePull   0          46s     10.244.0.45   minikube   <none>           <none>
+Ready endpoints during failed rollout: 2
+==> Checking Kubernetes workload state
+deployment.apps/taskguard condition met
+NAME                         READY   STATUS         RESTARTS   AGE
+taskguard-747b584f8f-tgzcw   1/1     Running        0          2m17s
+taskguard-747b584f8f-wlkhr   1/1     Running        0          2m23s
+taskguard-7b98498445-rwpbx   0/1     ErrImagePull   0          46s
+==> Service has 2 ready endpoints
+==> Checking health and readiness
+==> Checking the task API
+==> Checking application metrics
+PASS: TaskGuard deployment, Service endpoints, API, and metrics are healthy
+==> Restoring the captured known-good revision 11
+Warning: resource deployments/taskguard was previously managed with 'kubectl apply'. Rolling back will not update the kubectl.kubernetes.io/last-applied-configuration annotation, which may cause unexpected behavior on future 'kubectl apply' operations. Consider using 'kubectl apply' with your previous configuration file instead.
+deployment.apps/taskguard rolled back
+deployment "taskguard" successfully rolled out
+==> Checking Kubernetes workload state
+deployment.apps/taskguard condition met
+NAME                         READY   STATUS        RESTARTS   AGE
+taskguard-747b584f8f-tgzcw   1/1     Running       0          2m19s
+taskguard-747b584f8f-wlkhr   1/1     Running       0          2m25s
+taskguard-7b98498445-rwpbx   0/1     Terminating   0          48s
+==> Service has 2 ready endpoints
+==> Checking health and readiness
+==> Checking the task API
+==> Checking application metrics
+PASS: TaskGuard deployment, Service endpoints, API, and metrics are healthy
+==> Recovered state
+NAME                         READY   STATUS        RESTARTS   AGE     IP            NODE       NOMINATED NODE   READINESS GATES
+taskguard-747b584f8f-tgzcw   1/1     Running       0          2m21s   10.244.0.44   minikube   <none>           <none>
+taskguard-747b584f8f-wlkhr   1/1     Running       0          2m27s   10.244.0.43   minikube   <none>           <none>
+taskguard-7b98498445-rwpbx   0/1     Terminating   0          50s     10.244.0.45   minikube   <none>           <none>
+NAME              ADDRESSTYPE   PORTS   ENDPOINTS                             AGE
+taskguard-ghlvv   IPv4          8080    10.244.0.43,10.244.0.44,10.244.0.45   13d
+PASS: image-pull failure observed; HTTP checks passed during failure and after rollback

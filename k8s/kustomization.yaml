@@ -15,7 +15,6 @@ resources:
   - 06-networkpolicy.yaml
   - 07-hpa.yaml
   - 08-pdb.yaml
-  - 09-ingress.yaml
   - 10-servicemonitor.yaml
   - 11-prometheus-rule.yaml
 

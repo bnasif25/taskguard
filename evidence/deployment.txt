@@ -1,0 +1,122 @@
+==> Minikube profile 'minikube' is running
+==> Enabling metrics-server and ingress add-ons
+==> Installing kube-prometheus-stack 88.6.1
+helm repo add prometheus-community https://prometheus-community.github.io/helm-charts --force-update
+"prometheus-community" has been added to your repositories
+helm upgrade --install prometheus prometheus-community/kube-prometheus-stack \
+		--kube-context minikube \
+		--namespace monitoring \
+		--create-namespace \
+		--version 88.6.1 \
+		--wait \
+		--timeout 10m
+Release "prometheus" has been upgraded. Happy Helming!
+NAME: prometheus
+LAST DEPLOYED: Wed Sep  2 22:19:57 2026
+NAMESPACE: monitoring
+STATUS: deployed
+REVISION: 3
+DESCRIPTION: Upgrade complete
+TEST SUITE: None
+NOTES:
+kube-prometheus-stack has been installed. Check its status by running:
+  kubectl --namespace monitoring get pods -l "release=prometheus"
+
+Get Grafana 'admin' user password by running:
+
+  kubectl --namespace monitoring get secrets prometheus-grafana -o jsonpath="{.data.admin-password}" | base64 -d ; echo
+
+Access Grafana local instance:
+
+  export POD_NAME=$(kubectl --namespace monitoring get pod -l "app.kubernetes.io/name=grafana,app.kubernetes.io/instance=prometheus" -oname)
+  kubectl --namespace monitoring port-forward $POD_NAME 3000
+
+Get your grafana admin user password by running:
+
+  kubectl get secret --namespace monitoring -l app.kubernetes.io/component=admin-secret -o jsonpath="{.items[0].data.admin-password}" | base64 --decode ; echo
+
+
+Visit https://github.com/prometheus-operator/kube-prometheus for instructions on how to create & configure Alertmanager and Prometheus instances using the Operator.
+customresourcedefinition.apiextensions.k8s.io/servicemonitors.monitoring.coreos.com condition met
+customresourcedefinition.apiextensions.k8s.io/prometheusrules.monitoring.coreos.com condition met
+==> Building taskguard:1.0.0 directly inside Minikube
+minikube image build -p minikube -t taskguard:1.0.0 .
+#0 building with "default" instance using docker driver
+
+#1 [internal] load build definition from Dockerfile
+#1 transferring dockerfile: 1.80kB 0.0s done
+#1 DONE 0.0s
+
+#2 [internal] load metadata for docker.io/library/golang:1.26.8-alpine3.24@sha256:34efdd6036c92e155c8b0162a5da7626586b612ea636590035602c970eece564
+#2 DONE 1.8s
+
+#3 [internal] load .dockerignore
+#3 transferring context: 176B done
+#3 DONE 0.0s
+
+#4 [builder 1/7] FROM docker.io/library/golang:1.26.8-alpine3.24@sha256:34efdd6036c92e155c8b0162a5da7626586b612ea636590035602c970eece564
+#4 DONE 0.0s
+
+#5 [stage-1 1/3] WORKDIR /app
+#5 DONE 0.0s
+
+#6 [internal] load build context
+#6 transferring context: 16.27kB done
+#6 DONE 0.0s
+
+#7 [builder 2/7] RUN apk add --no-cache git ca-certificates
+#7 CACHED
+
+#8 [builder 3/7] WORKDIR /app
+#8 CACHED
+
+#9 [builder 4/7] COPY go.mod go.sum ./
+#9 DONE 0.1s
+
+#10 [builder 5/7] RUN go mod download
+#10 DONE 3.0s
+
+#11 [builder 6/7] COPY main.go ./
+#11 DONE 0.0s
+
+#12 [builder 7/7] RUN CGO_ENABLED=0 go build     -ldflags '-s -w'     -o taskguard     main.go
+#12 DONE 34.3s
+
+#13 [stage-1 2/3] COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
+#13 CACHED
+
+#14 [stage-1 3/3] COPY --from=builder /app/taskguard ./
+#14 DONE 0.0s
+
+#15 exporting to image
+#15 exporting layers 0.0s done
+#15 writing image sha256:e4638b73588b042e5ac897d05c35c87b0b93751a2cb7cfa7c6df27f24f6c9d6b done
+#15 naming to docker.io/library/taskguard:1.0.0 done
+#15 DONE 0.0s
+==> Applying TaskGuard Kubernetes resources
+kubectl --context=minikube apply -k ./k8s
+namespace/taskguard unchanged
+serviceaccount/taskguard unchanged
+configmap/taskguard-config unchanged
+service/taskguard unchanged
+deployment.apps/taskguard configured
+poddisruptionbudget.policy/taskguard configured
+horizontalpodautoscaler.autoscaling/taskguard unchanged
+prometheusrule.monitoring.coreos.com/taskguard-alerts unchanged
+servicemonitor.monitoring.coreos.com/taskguard unchanged
+ingress.networking.k8s.io/taskguard unchanged
+networkpolicy.networking.k8s.io/taskguard-ingress-lockdown unchanged
+==> Restarting Pods so ConfigMap values are refreshed
+kubectl --context=minikube rollout restart deployment/taskguard -n taskguard
+deployment.apps/taskguard restarted
+==> Waiting for the TaskGuard rollout
+kubectl --context=minikube rollout status deployment/taskguard -n taskguard --timeout=180s
+Waiting for deployment "taskguard" rollout to finish: 1 out of 2 new replicas have been updated...
+Waiting for deployment "taskguard" rollout to finish: 1 out of 2 new replicas have been updated...
+Waiting for deployment "taskguard" rollout to finish: 1 out of 2 new replicas have been updated...
+Waiting for deployment "taskguard" rollout to finish: 1 old replicas are pending termination...
+Waiting for deployment "taskguard" rollout to finish: 1 old replicas are pending termination...
+Waiting for deployment "taskguard" rollout to finish: 1 old replicas are pending termination...
+Waiting for deployment "taskguard" rollout to finish: 1 old replicas are pending termination...
+deployment "taskguard" successfully rolled out
+==> Deployment complete. Run 'make verify'.

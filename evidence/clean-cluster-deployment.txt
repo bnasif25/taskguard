@@ -1,0 +1,27 @@
+==> Starting Minikube v1.35.1 with the Docker driver
+* [taskguard-rehearsal] minikube v1.38.1 on Darwin 26.6 (arm64)
+  - MINIKUBE_PROFILE=taskguard-rehearsal
+* Using the docker driver based on user configuration
+! Starting v1.39.0, minikube will default to "containerd" container runtime. See #21973 for more info.
+* Using Docker Desktop driver with root privileges
+* Starting "taskguard-rehearsal" primary control-plane node in "taskguard-rehearsal" cluster
+* Pulling base image v0.0.50 ...
+* Configuring bridge CNI (Container Networking Interface) ...
+* Verifying Kubernetes components...
+  - Using image gcr.io/k8s-minikube/storage-provisioner:v5
+* Enabled addons: default-storageclass, storage-provisioner
+* Done! kubectl is now configured to use "taskguard-rehearsal" cluster and "default" namespace by default
+==> Enabling metrics-server and ingress add-ons
+X Exiting due to MK_ADDON_ENABLE: enable failed: run callbacks: running callbacks: [waiting for app.kubernetes.io/name=ingress-nginx pods: context deadline exceeded]
+*
+╭───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+│                                                                                                                           │
+│    * If the above advice does not help, please let us know:                                                               │
+│      https://github.com/kubernetes/minikube/issues/new/choose                                                             │
+│                                                                                                                           │
+│    * Please run `minikube logs --file=logs.txt` and attach logs.txt to the GitHub issue.                                  │
+│    * Please also attach the following file to the GitHub issue:                                                           │
+│    * - /var/folders/r7/tzhjpp3x2fg0878hh_6_gmwh0000gq/T/minikube_addons_1228c47c162a29dbe53fd2b4c1ecfd4509662f2b_0.log    │
+│                                                                                                                           │
+╰───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+make: *** [cluster] Error 10
