@@ -214,7 +214,6 @@ make destroy
 - [Test and verification report](TEST-REPORT.md)
 - [Learning retrospective](RETROSPECTIVE.md)
 - [AI usage disclosure](AI-USAGE.md)
-- [Demonstration script](DEMO.md)
 
 ## Repository structure
 

@@ -39,6 +39,9 @@ Thumbs.db
 *.bak
 *.backup
 
+# Personal recording notes; not part of the submission
+/DEMO.md
+
 # Python helper artifacts
 __pycache__/
 *.py[cod]
