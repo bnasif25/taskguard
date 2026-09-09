@@ -32,7 +32,7 @@ Deadline: 10 September 2026 at 23:59 UTC (11 September at 03:59 in Mauritius).
 - [x] `TEST-REPORT.md`
 - [x] `AI-USAGE.md`
 - [x] `RETROSPECTIVE.md`
-- [ ] Personal demonstration video, no more than eight minutes
+- [x] [Personal demonstration video (7 minutes 54 seconds)](https://youtu.be/vqbqwFQVUoE)
 - [ ] Confirm final repository commit identifier after all changes
 - [ ] Confirm selected track: Mauritius Community or International Community
 - [ ] Confirm intended eligible CNCF certification

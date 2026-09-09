@@ -4,6 +4,10 @@
 
 TaskGuard is a small Go task API productionised for a Kubernetes learning and operations demonstration. The application is deliberately simple so the repository can focus on reproducible deployment, least privilege, reliability, observability, testing, and failure recovery.
 
+## Demonstration video
+
+[Watch the 7-minute 54-second TaskGuard competition demonstration on YouTube](https://youtu.be/vqbqwFQVUoE).
+
 > The task store is in memory. Data is intentionally lost when a Pod restarts, and two replicas do not share tasks. This is a documented demonstration limitation, not a production data design.
 
 ## Architecture

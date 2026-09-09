@@ -41,6 +41,7 @@ Thumbs.db
 
 # Personal recording notes; not part of the submission
 /DEMO.md
+/recordings/
 
 # Python helper artifacts
 __pycache__/
