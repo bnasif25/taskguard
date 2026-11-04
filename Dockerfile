@@ -2,7 +2,7 @@
 # This reduces attack surface and image size.
 
 # ---------- STAGE 1: Builder ----------
-FROM golang:1.26.8-alpine3.24@sha256:34efdd6036c92e155c8b0162a5da7626586b612ea636590035602c970eece564 AS builder
+FROM golang:1.27.3-alpine3.24@sha256:d200d2dd76b03a99b52651fd1325aff7dcd35422c35c01bac56571b0507f3deb AS builder
 
 # Install git + ca-certificates so 'go mod download' can fetch from GitHub.
 RUN apk add --no-cache git ca-certificates
